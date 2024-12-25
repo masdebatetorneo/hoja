@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folla de Avaliación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #0056b3;
+            color: white;
+        }
+        .header-row {
+            background-color: #f0f0f0;
+        }
+        .highlight-blue {
+            background-color: #0056b3;
+            color: white;
+            font-weight: bold;
+        }
+        .highlight-gray {
+            background-color: #666;
+            color: white;
+            font-weight: bold;
+        }
+        .input-cell {
+            background-color: white;
+        }
+        select {
+            width: 100%;
+            font-size: 1em;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .tag {
+            display: flex;
+            align-items: center;
+            background: #0056b3;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .tag .remove {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+#total-a-favor, #total-en-contra {
+            font-size: 1.1em; /* Tamaño de fuente más grande */
+            
+   
+            color: #333; /* Color del texto */
+        }
+
+#puntuacion-final-a-favor, #puntuacion-final-en-contra {
+            font-size: 1.5em; /* Tamaño de fuente más grande */
+            font-weight: bold   
+            color: #333; /* Color del texto */
+        }
+
+     
+
+    </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Actualizar totales
+        function actualizarTotales() {
+            let totalAFavor = 0;
+            let totalEnContra = 0;
+
+            const selectsAFavor = document.querySelectorAll('.a-favor');
+            const selectsEnContra = document.querySelectorAll('.en-contra');
+
+            selectsAFavor.forEach(select => {
+                totalAFavor += select.classList.contains('persuasivo') 
+                    ? (parseInt(select.value) || 0) * 3 
+                    : parseInt(select.value) || 0;
+            });
+
+            selectsEnContra.forEach(select => {
+                totalEnContra += select.classList.contains('persuasivo') 
+                    ? (parseInt(select.value) || 0) * 3 
+                    : parseInt(select.value) || 0;
+            });
+
+            document.getElementById('total-a-favor').value = totalAFavor;
+            document.getElementById('total-en-contra').value = totalEnContra;
+
+            calcularPuntuacionFinalAFavor();
+            calcularPuntuacionFinalEnContra();
+        }
+
+        function calcularPuntuacionFinalAFavor() {
+            const totalAFavor = parseInt(document.getElementById('total-a-favor').value) || 0;
+            const penaltiesAFavor = document.querySelectorAll('#penalty-container1 .tag');
+
+            let penalizacionTotal = 0;
+
+            penaltiesAFavor.forEach(tag => {
+                switch (tag.dataset.value) {
+                    case 'Aviso':
+                        penalizacionTotal += 0;
+                        break;
+                    case 'Falta Leve':
+                        penalizacionTotal += 30;
+                        break;
+                    case 'Falta Grave':
+                        penalizacionTotal += 90;
+                        break;
+                    case 'Falta Eliminatoria':
+                        penalizacionTotal += 100;
+                        break;
+                }
+            });
+
+            const puntuacionFinal = Math.max(totalAFavor - penalizacionTotal, 0);
+            document.getElementById('puntuacion-final-a-favor').value = puntuacionFinal;
+        }
+
+        function calcularPuntuacionFinalEnContra() {
+            const totalEnContra = parseInt(document.getElementById('total-en-contra').value) || 0;
+            const penaltiesEnContra = document.querySelectorAll('#penalty-container2 .tag');
+
+            let penalizacionTotal = 0;
+
+            penaltiesEnContra.forEach(tag => {
+                switch (tag.dataset.value) {
+                    case 'Aviso':
+                        penalizacionTotal += 0;
+                        break;
+                    case 'Falta Leve':
+                        penalizacionTotal += 30;
+                        break;
+                    case 'Falta Grave':
+                        penalizacionTotal += 90;
+                        break;
+                    case 'Falta Eliminatoria':
+                        penalizacionTotal += 100;
+                        break;
+                }
+            });
+
+            const puntuacionFinal = Math.max(totalEnContra - penalizacionTotal, 0);
+            document.getElementById('puntuacion-final-en-contra').value = puntuacionFinal;
+
+            determinarGanador();
+        }
+
+        function determinarGanador() {
+            const teamAName = document.getElementById("teamA").value;
+            const teamBName = document.getElementById("teamB").value;
+
+            const scoreA = parseFloat(document.getElementById("puntuacion-final-a-favor").value) || 0;
+            const scoreB = parseFloat(document.getElementById("puntuacion-final-en-contra").value) || 0;
+
+            let winnerMessage = "Empate";
+            if (teamAName && teamBName) {
+                if (scoreA > scoreB) {
+                    winnerMessage = `Ganador: ${teamAName}`;
+                } else if (scoreA < scoreB) {
+                    winnerMessage = `Ganador: ${teamBName}`;
+                }
+            }
+
+            document.getElementById("winner-display").innerText = winnerMessage;
+        }
+
+        function addPenalty(selectId, containerId) {
+            const select = document.getElementById(selectId);
+            const container = document.getElementById(containerId);
+            const selectedOption = select.options[select.selectedIndex].value;
+
+            if (selectedOption) {
+                const tag = document.createElement("div");
+                tag.className = "tag";
+                tag.dataset.value = selectedOption;
+                tag.innerHTML = `${selectedOption} <span class='remove'>&times;</span>`;
+
+                tag.querySelector('.remove').addEventListener('click', () => {
+                    tag.remove();
+                    calcularPuntuacionFinalAFavor();
+                    calcularPuntuacionFinalEnContra();
+                });
+
+                container.appendChild(tag);
+                select.selectedIndex = 0;
+                calcularPuntuacionFinalAFavor();
+                calcularPuntuacionFinalEnContra();
+            } else {
+                console.warn("No se seleccionó ninguna penalización");
+            }
+        }
+
+        function updateTeams() {
+            const category = document.getElementById("category").value;
+
+            const teamOptions = {
+                Secundaria: [
+                    "Seleccione",
+                    "Maristas Lugo 1",
+                    "Maristas Lugo 2",
+                    "Puga Ramón 1",
+                    "Puga Ramón 2",
+                    "San José FEC",
+                    "Seminario Diocesano",
+                    "Val do Asma",
+                    "Franciscanos 1",
+                    "Franciscanos 2",
+                    "Lucus Augusti 1",
+                    "Lucus Augusti 2",
+                    "Río Cabe",
+                    "Fingoi",
+                    "Santo Ángel"
+                ],
+                Bachillerato: [
+                    "Seleccione",
+                    "Muralla Romana",
+                    "Puga Ramón 1",
+                    "Puga Ramón 2",
+                    "San José FEC",
+                    "Seminario Diocesano",
+                    "Lucus Augusti 1",
+                    "Río Cabe 1",
+                    "Río Cabe 2",
+                    "Río Cabe 3"
+                ]
+            };
+
+            const teamA = document.getElementById("teamA");
+            const teamB = document.getElementById("teamB");
+
+            teamA.innerHTML = "";
+            teamB.innerHTML = "";
+
+            if (teamOptions[category]) {
+                teamOptions[category].forEach(team => {
+                    const optionA = document.createElement("option");
+                    optionA.textContent = team;
+                    optionA.value = team;
+                    teamA.appendChild(optionA);
+
+                    const optionB = document.createElement("option");
+                    optionB.textContent = team;
+                    optionB.value = team;
+                    teamB.appendChild(optionB);
+                });
+            } else {
+                const defaultOption = "Cubre la casilla CATEGORÍA para poder seleccionar un equipo";
+                const optionA = document.createElement("option");
+                optionA.textContent = defaultOption;
+                optionA.value = "";
+                teamA.appendChild(optionA);
+
+                const optionB = document.createElement("option");
+                optionB.textContent = defaultOption;
+                optionB.value = "";
+                teamB.appendChild(optionB);
+            }
+        }
+
+        const categorySelect = document.getElementById("category");
+        if (categorySelect) {
+            categorySelect.addEventListener("change", updateTeams);
+        }
+
+        const select1 = document.getElementById("penalty-select1");
+        const select2 = document.getElementById("penalty-select2");
+
+        if (select1) {
+            select1.addEventListener("change", () => addPenalty("penalty-select1", "penalty-container1"));
+        }
+
+        if (select2) {
+            select2.addEventListener("change", () => addPenalty("penalty-select2", "penalty-container2"));
+        }
+
+        const allSelects = document.querySelectorAll('.a-favor, .en-contra');
+        allSelects.forEach(select => {
+            select.addEventListener('change', () => {
+                actualizarTotales();
+                calcularPuntuacionFinalAFavor();
+                calcularPuntuacionFinalEnContra();
+            });
+        });
+
+        actualizarTotales();
+    });
+</script>
+
+
+</head>
+<body>
+    <h1>FOLLA DE AVALIACIÓN</h1>
+    <div class="container">
+        <table>
+            <tr class="header-row">
+                <td><strong>CATEGORÍA:</strong> 
+                    <select id="category" onchange="updateTeams()">
+                        <option value="">Seleccione</option>
+                        <option value="Secundaria">Secundaria</option>
+                        <option value="Bachillerato">Bachillerato</option>
+                    </select>
+                </td>
+                <td><strong>RONDA:</strong> 
+                    <select>
+			<option>Seleccione</option>
+                        <option>Ronda 1</option>
+                        <option>Ronda 2</option>
+                        <option>Ronda 3</option>
+                        <option>Ronda 4</option>
+                        <option>Ronda 5</option>
+                        <option>Cuartos de Final</option>
+                        <option>Semifinal</option>
+                        <option>Final</option>
+                    </select>
+                </td>
+                <td><strong>SALA:</strong> 
+                    <select>
+			<option>Seleccione</option>
+                        <option>Sala 1</option>
+                        <option>Sala 2</option>
+                        <option>Sala 3</option>
+                        <option>Sala 4</option>
+                        <option>Sala 5</option>
+                        <option>Sala 6</option>
+                        <option>Sala 7</option>
+                        <option>Sala 8</option>
+                        <option>Sala 9</option>
+                        <option>Sala 10</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>XUÍZ PRINCIPAL: </strong>  
+                    <select>
+			<option>Seleccione</option>
+                        <option>Óscar Rodríguez</option>
+                        <option>Manuel Maseda</option>
+                        <option>Antonio Platero</option>
+                        <option>Saúl Corredoira</option>
+                        <option>Xoel Rodríguez</option>
+                        <option>Miguel Bolaños</option>
+                        <option>Juan Bayón</option>
+                        <option>Miguel Granero</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>XUÍCES PANELISTAS: </strong>
+                    <select id="panelists-select" onchange="addPanelist()">
+                        <option value="">Seleccione</option>
+                        <option>Alfonso Carballada</option>
+                        <option>Coral Carballedo</option>
+                        <option>Iago Cabrera</option>
+                        <option>Ana Gallego</option>
+                        <option>Ana González</option>
+                        <option>Paula Parente</option>
+                        <option>Jorge Huéscar</option>
+                        <option>Alejandro López</option>
+                        <option>Marcos Soler</option>
+                        <option>Andrea Polo</option>
+                        <option>Cristina Ouro</option>
+                        <option>Miguel Silva</option>
+                        <option>Miriam Fernández</option>
+                        <option>Marcela Miñambres</option>
+                        <option>Lucía García</option>
+                        <option>Alba Busto</option>
+                        <option>Gabriela Rodríguez</option>
+                        <option>Paula Álvarez</option>
+                        <option>María Calo</option>
+                        <option>Irene Filgueira</option>
+                        <option>Paula Vieitez</option>
+                        <option>Uxía Sánchez</option>
+                        <option>Martín Gómez</option>
+                        <option>Alba Lamas</option>
+                        <option>Jaime Álvarez</option>
+                        <option>María Núñez</option>
+                    </select>
+                    <div id="panelists-container" class="tag-container"></div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>EQUIPO A FAVOR: </strong> 
+                    <select id="teamA">
+                        <option>Cubra la casilla CATEGORÍA para poder seleccionar un equipo</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>EQUIPO EN CONTRA: </strong> 
+                    <select id="teamB">
+                        <option>Cubra la casilla CATEGORÍA para poder seleccionar un equipo</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <th>ÍTEM (do 0 ao 10)</th>
+                <th>A FAVOR</th>
+                <th>EN CONTRA</th>
+            </tr>
+            <tr>
+                <td>Establece un marco para o debate ou adáptase ao marco proposto polo outro equipo?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>Os argumentos presentados son relevantes e verosímiles?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>O conxunto do seu caso (liña argumental) é suficiente para probar a súa postura?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>As contrargumentacións efectuadas restan relevancia ou verosimilitude aos argumentos contrarios?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>Fai unha lectura adecuada do debate?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>Usa a linguaxe paraverbal de forma efectiva para reforzar a súa mensaxe?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>Emprega a linguaxe non verbal de forma adecuada para apoiar o seu discurso?</td>
+                <td>
+                    <select class="a-favor">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>Como de persuasivo foi no conxunto do debate? (x3)</td>
+                <td>
+                    <select class="a-favor persuasivo">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="en-contra persuasivo">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+            </tr>
+            <tr>
+                <td>Puntuación Total</td>
+                <td><input type="number" id="total-a-favor" value="0" readonly></td>
+                <td><input type="number" id="total-en-contra" value="0" readonly></td>
+            </tr>
+	     <tr> 
+    <td>PENALIZACIONES</td>
+    <td class="input-cell">
+        <select id="penalty-select1" onchange="addPenalty1()">
+            <option value="">Seleccione</option>
+            <option value="Aviso">Aviso</option>
+            <option value="Falta Leve">Falta Leve</option>
+            <option value="Falta Grave">Falta Grave</option>
+            <option value="Falta Eliminatoria">Falta Eliminatoria</option>
+        </select>
+        <div id="penalty-container1" class="tag-container"></div>
+    </td>
+    <td class="input-cell">
+        <select id="penalty-select2" onchange="addPenalty2()">
+            <option value="">Seleccione</option>
+            <option value="Aviso">Aviso</option>
+            <option value="Falta Leve">Falta Leve</option>
+            <option value="Falta Grave">Falta Grave</option>
+            <option value="Falta Eliminatoria">Falta Eliminatoria</option>
+        </select>
+        <div id="penalty-container2" class="tag-container"></div>
+    </td>
+</tr>
+
+	     
+              
+            <tr>
+                <td><strong>PUNTUACIÓN FINAL</strong> (descontadas penalizacións)</td>
+                <td><input type="number" id="puntuacion-final-a-favor" value="0" readonly></td>
+                <td><input type="number" id="puntuacion-final-en-contra" value="0" readonly></td>
+            </tr>
+        </table>
+
+        <p>INCIDENCIAS: <input type="text" style="width: 300px;"></p>
+    </div>
+<div class="winner-container">
+        <p id="winner-display">Empate</p>
+    </div>
+</body>
+</html>
